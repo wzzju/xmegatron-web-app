@@ -5,13 +5,14 @@ import dash_bootstrap_components as dbc
 import numpy as np
 import plotly.graph_objs as go
 from dash import dcc, html
+from dash.dependencies import Input, Output
 
 from .home import get_sidebar
 
 dash.register_page(__name__, path='/accuracy', title='Accuracy Monitor', name='Accuracy Monitor')
 
 
-def generate_sample_data():
+def get_dummy_acc_data():
     dates = [(datetime.now() - timedelta(days=x)).strftime('%Y-%m-%d') for x in range(30)]
     dense_scroes = np.round(np.random.uniform(30, 31, 30), 2)
     moe_scroes = np.round(np.random.uniform(51, 52, 30), 2)
@@ -19,7 +20,7 @@ def generate_sample_data():
 
 
 def layout():
-    dates, dense_scroes, moe_scroes = generate_sample_data()
+    dates, dense_scroes, moe_scroes = get_dummy_acc_data()
 
     banner = dbc.Row(
         [
@@ -51,7 +52,7 @@ def layout():
                                 [
                                     html.H5("时间范围", className="card-title"),
                                     dcc.DatePickerRange(
-                                        id='date-range-accuracy',
+                                        id='date-range-acc',
                                         start_date=dates[-1],
                                         end_date=dates[0],
                                         display_format='YYYY-MM-DD',
@@ -77,7 +78,7 @@ def layout():
                                 [
                                     html.H5("前十步loss均值", className="card-title"),
                                     dcc.Graph(
-                                        id='accuracy-graph',
+                                        id='acc-dense-graph',
                                         figure={
                                             'data': [
                                                 go.Scatter(
@@ -115,7 +116,7 @@ def layout():
                                 [
                                     html.H5("前十步loss均值", className="card-title"),
                                     dcc.Graph(
-                                        id='precision-graph',
+                                        id='acc-moe-graph',
                                         figure={
                                             'data': [
                                                 go.Scatter(
@@ -161,3 +162,66 @@ def layout():
     ]
 
     return layout
+
+
+@dash.callback(
+    [Output('acc-dense-graph', 'figure'), Output('acc-moe-graph', 'figure')],
+    [Input('date-range-acc', 'start_date'), Input('date-range-acc', 'end_date')],
+)
+def update_graphs(start_date, end_date):
+    dates, dense_scores, moe_scores = get_dummy_acc_data()
+
+    if start_date and end_date:
+        # 转换日期字符串为datetime对象以进行比较
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        # 过滤日期范围内的数据
+        filtered_data = [
+            (d, ds, ms)
+            for d, ds, ms in zip(dates, dense_scores, moe_scores)
+            if start_date <= datetime.strptime(d, '%Y-%m-%d') <= end_date
+        ]
+        if filtered_data:
+            dates, dense_scores, moe_scores = zip(*filtered_data)
+
+    # 更新Dense图表
+    dense_figure = {
+        'data': [
+            go.Scatter(
+                x=dates,
+                y=dense_scores,
+                mode='lines+markers',
+                name='Llama3',
+                line=dict(color='#e74c3c'),
+            )
+        ],
+        'layout': go.Layout(
+            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+            hovermode='closest',
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            yaxis=dict(range=[28, 35]),
+        ),
+    }
+
+    # 更新MoE图表
+    moe_figure = {
+        'data': [
+            go.Scatter(
+                x=dates,
+                y=moe_scores,
+                mode='lines+markers',
+                name='DeepSeek-V3',
+                line=dict(color='#9b59b6'),
+            )
+        ],
+        'layout': go.Layout(
+            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+            hovermode='closest',
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            yaxis=dict(range=[46, 56]),
+        ),
+    }
+
+    return dense_figure, moe_figure
