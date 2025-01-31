@@ -13,8 +13,6 @@ dash.register_page(__name__, path='/accuracy', title='Accuracy Monitor', name='A
 
 def generate_sample_data():
     dates = [(datetime.now() - timedelta(days=x)).strftime('%Y-%m-%d') for x in range(30)]
-    dense_scroes = [round(5 + (5 * (i % 4) / 3), 2) for i in range(30)]
-    moe_scroes = [round(7 + (8 * (i % 3) / 2), 2) for i in range(30)]
     dense_scroes = np.round(np.random.uniform(30, 31, 30), 2)
     moe_scroes = np.round(np.random.uniform(51, 52, 30), 2)
     return dates, dense_scroes, moe_scroes
