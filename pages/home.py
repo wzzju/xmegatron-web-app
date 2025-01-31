@@ -6,7 +6,7 @@ import numpy as np
 import plotly.graph_objs as go
 from dash import Input, Output, State, clientside_callback, dcc, html
 
-dash.register_page(__name__, path='/', title='Performance Monitor', name='Performance Monitor')
+dash.register_page(__name__, path='/', title='Accuracy Monitor', name='Accuracy Monitor')
 
 
 def get_sidebar(active_item=None):
@@ -44,7 +44,7 @@ def get_sidebar(active_item=None):
                     html.Hr(),
                     dbc.NavItem(
                         dbc.NavLink(
-                            "Performance",
+                            "Accuracy",
                             href="/",
                             className='text-white',
                             active=True if active_item == 'pages.home' else False,
@@ -52,10 +52,10 @@ def get_sidebar(active_item=None):
                     ),
                     dbc.NavItem(
                         dbc.NavLink(
-                            "Accuracy",
-                            href="/accuracy",
+                            "Performance",
+                            href="/performance",
                             className='text-white',
-                            active=True if active_item == 'pages.accuracy' else False,
+                            active=True if active_item == 'pages.performance' else False,
                         )
                     ),
                     dbc.NavItem(
@@ -73,15 +73,15 @@ def get_sidebar(active_item=None):
     return nav
 
 
-def get_dummy_perf_data():
+def get_dummy_acc_data():
     dates = [(datetime.now() - timedelta(days=x)).strftime('%Y-%m-%d') for x in range(30)]
-    dense_scroes = np.round(np.random.uniform(300, 310, 30), 2)
-    moe_scroes = np.round(np.random.uniform(200, 210, 30), 2)
+    dense_scroes = np.round(np.random.uniform(30, 31, 30), 2)
+    moe_scroes = np.round(np.random.uniform(51, 52, 30), 2)
     return dates, dense_scroes, moe_scroes
 
 
 def layout():
-    dates, dense_scroes, moe_scroes = get_dummy_perf_data()
+    dates, dense_scroes, moe_scroes = get_dummy_acc_data()
 
     banner = dbc.Row(
         [
@@ -89,9 +89,9 @@ def layout():
                 [
                     html.Div(
                         [
-                            html.H2("性能监控", className="text-center text-white mb-4"),
+                            html.H2("精度监控", className="text-center text-white mb-4"),
                             html.P(
-                                "监控XMLIR代码仓每个合入commit对XMegatron模型训练性能的影响",
+                                "监控XMLIR代码仓每个合入commit对XMegatron模型训练精度的影响",
                                 className="text-center text-white",
                             ),
                         ],
@@ -113,7 +113,7 @@ def layout():
                                 [
                                     html.H5("时间范围", className="card-title"),
                                     dcc.DatePickerRange(
-                                        id='date-range-perf',
+                                        id='date-range-acc',
                                         start_date=dates[-1],
                                         end_date=dates[0],
                                         display_format='YYYY-MM-DD',
@@ -137,9 +137,9 @@ def layout():
                         [
                             dbc.CardBody(
                                 [
-                                    html.H5("训练吞吐", className="card-title"),
+                                    html.H5("前十步loss均值", className="card-title"),
                                     dcc.Graph(
-                                        id='perf-dense-graph',
+                                        id='acc-dense-graph',
                                         figure={
                                             'data': [
                                                 go.Scatter(
@@ -147,7 +147,7 @@ def layout():
                                                     y=dense_scroes,
                                                     mode='lines+markers',
                                                     name='Llama3',
-                                                    line=dict(color='#2ecc71'),
+                                                    line=dict(color='#e74c3c'),
                                                 )
                                             ],
                                             'layout': go.Layout(
@@ -155,7 +155,7 @@ def layout():
                                                 hovermode='closest',
                                                 plot_bgcolor='white',
                                                 paper_bgcolor='white',
-                                                yaxis=dict(range=[260, 360]),
+                                                yaxis=dict(range=[28, 35]),
                                             ),
                                         },
                                     ),
@@ -175,9 +175,9 @@ def layout():
                         [
                             dbc.CardBody(
                                 [
-                                    html.H5("训练吞吐", className="card-title"),
+                                    html.H5("前十步loss均值", className="card-title"),
                                     dcc.Graph(
-                                        id='perf-moe-graph',
+                                        id='acc-moe-graph',
                                         figure={
                                             'data': [
                                                 go.Scatter(
@@ -185,7 +185,7 @@ def layout():
                                                     y=moe_scroes,
                                                     mode='lines+markers',
                                                     name='DeepSeek-V3',
-                                                    line=dict(color='#3498db'),
+                                                    line=dict(color='#9b59b6'),
                                                 )
                                             ],
                                             'layout': go.Layout(
@@ -193,7 +193,7 @@ def layout():
                                                 hovermode='closest',
                                                 plot_bgcolor='white',
                                                 paper_bgcolor='white',
-                                                yaxis=dict(range=[160, 260]),
+                                                yaxis=dict(range=[46, 56]),
                                             ),
                                         },
                                     ),
@@ -226,11 +226,11 @@ def layout():
 
 
 @dash.callback(
-    [Output('perf-dense-graph', 'figure'), Output('perf-moe-graph', 'figure')],
-    [Input('date-range-perf', 'start_date'), Input('date-range-perf', 'end_date')],
+    [Output('acc-dense-graph', 'figure'), Output('acc-moe-graph', 'figure')],
+    [Input('date-range-acc', 'start_date'), Input('date-range-acc', 'end_date')],
 )
 def update_graphs(start_date, end_date):
-    dates, dense_scores, moe_scores = get_dummy_perf_data()
+    dates, dense_scores, moe_scores = get_dummy_acc_data()
 
     if start_date and end_date:
         # 转换日期字符串为datetime对象以进行比较
@@ -253,7 +253,7 @@ def update_graphs(start_date, end_date):
                 y=dense_scores,
                 mode='lines+markers',
                 name='Llama3',
-                line=dict(color='#2ecc71'),
+                line=dict(color='#e74c3c'),
             )
         ],
         'layout': go.Layout(
@@ -261,7 +261,7 @@ def update_graphs(start_date, end_date):
             hovermode='closest',
             plot_bgcolor='white',
             paper_bgcolor='white',
-            yaxis=dict(range=[260, 360]),
+            yaxis=dict(range=[28, 35]),
         ),
     }
 
@@ -273,7 +273,7 @@ def update_graphs(start_date, end_date):
                 y=moe_scores,
                 mode='lines+markers',
                 name='DeepSeek-V3',
-                line=dict(color='#3498db'),
+                line=dict(color='#9b59b6'),
             )
         ],
         'layout': go.Layout(
@@ -281,7 +281,7 @@ def update_graphs(start_date, end_date):
             hovermode='closest',
             plot_bgcolor='white',
             paper_bgcolor='white',
-            yaxis=dict(range=[160, 260]),
+            yaxis=dict(range=[46, 56]),
         ),
     }
 
