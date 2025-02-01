@@ -6,7 +6,7 @@ services:
     environment:
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
-      - "ELASTIC_PASSWORD=123456"
+      - "ELASTIC_PASSWORD=123456" # 需要修改为强密码
       - xpack.security.enabled=true
       - bootstrap.memory_lock=true
       - "network.host=0.0.0.0"
@@ -22,18 +22,18 @@ services:
     ports:
       - "8901:9200"
     volumes:
-      - es_data:/work/elastic/data
+      - es_data:/usr/share/elasticsearch/data
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.0
     container_name: kibana
     environment:
-      - "SERVER_PUBLICBASEURL=http://`hostname -i`:5601"
+      - "SERVER_PUBLICBASEURL=http://`hostname -i`:5601" # 需要修改为所部署机器对应的IP地址
       - "SERVER_HOST=0.0.0.0"
       - SERVER_NAME=kibana
       - "ELASTICSEARCH_HOSTS=http://elasticsearch:9200"
       - ELASTICSEARCH_USERNAME=elastic
-      - "ELASTICSEARCH_PASSWORD=123456"
+      - "ELASTICSEARCH_PASSWORD=123456" # 需要修改为强密码
     networks:
       - esnet1
     ports:

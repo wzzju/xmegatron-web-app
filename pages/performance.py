@@ -1,11 +1,10 @@
-from datetime import datetime, timedelta
-
 import dash
 import dash_bootstrap_components as dbc
-import numpy as np
 import plotly.graph_objs as go
 from dash import dcc, html
 from dash.dependencies import Input, Output
+
+from elastic_utils import get_or_connect_es, search_data
 
 from .home import get_sidebar
 
@@ -14,15 +13,9 @@ dash.register_page(
 )
 
 
-def get_dummy_perf_data():
-    dates = [(datetime.now() - timedelta(days=x)).strftime('%Y-%m-%d') for x in range(30)]
-    dense_scroes = np.round(np.random.uniform(300, 310, 30), 2)
-    moe_scroes = np.round(np.random.uniform(200, 210, 30), 2)
-    return dates, dense_scroes, moe_scroes
-
-
 def layout():
-    dates, dense_scroes, moe_scroes = get_dummy_perf_data()
+    es = get_or_connect_es()
+    dates, _, _, dense_perf, moe_perf = search_data(es=es)
 
     banner = dbc.Row(
         [
@@ -85,7 +78,7 @@ def layout():
                                             'data': [
                                                 go.Scatter(
                                                     x=dates,
-                                                    y=dense_scroes,
+                                                    y=dense_perf,
                                                     mode='lines+markers',
                                                     name='Llama3',
                                                     line=dict(color='#2ecc71'),
@@ -96,7 +89,7 @@ def layout():
                                                 hovermode='closest',
                                                 plot_bgcolor='white',
                                                 paper_bgcolor='white',
-                                                yaxis=dict(range=[260, 360]),
+                                                yaxis=dict(range=[285, 315]),
                                             ),
                                         },
                                     ),
@@ -123,7 +116,7 @@ def layout():
                                             'data': [
                                                 go.Scatter(
                                                     x=dates,
-                                                    y=moe_scroes,
+                                                    y=moe_perf,
                                                     mode='lines+markers',
                                                     name='DeepSeek-V3',
                                                     line=dict(color='#3498db'),
@@ -134,7 +127,7 @@ def layout():
                                                 hovermode='closest',
                                                 plot_bgcolor='white',
                                                 paper_bgcolor='white',
-                                                yaxis=dict(range=[160, 260]),
+                                                yaxis=dict(range=[180, 220]),
                                             ),
                                         },
                                     ),
@@ -171,27 +164,20 @@ def layout():
     [Input('date-range-perf', 'start_date'), Input('date-range-perf', 'end_date')],
 )
 def update_graphs(start_date, end_date):
-    dates, dense_scores, moe_scores = get_dummy_perf_data()
+    dates, dense_acc, moe_acc = [], [], []
 
     if start_date and end_date:
-        # 转换日期字符串为datetime对象以进行比较
-        start_date = datetime.strptime(start_date, '%Y-%m-%d')
-        end_date = datetime.strptime(end_date, '%Y-%m-%d')
-        # 过滤日期范围内的数据
-        filtered_data = [
-            (d, ds, ms)
-            for d, ds, ms in zip(dates, dense_scores, moe_scores)
-            if start_date <= datetime.strptime(d, '%Y-%m-%d') <= end_date
-        ]
-        if filtered_data:
-            dates, dense_scores, moe_scores = zip(*filtered_data)
+        es = get_or_connect_es()
+        dates, _, _, dense_perf, moe_perf = search_data(
+            start_date=start_date, end_date=end_date, es=es
+        )
 
     # 更新Dense图表
     dense_figure = {
         'data': [
             go.Scatter(
                 x=dates,
-                y=dense_scores,
+                y=dense_perf,
                 mode='lines+markers',
                 name='Llama3',
                 line=dict(color='#2ecc71'),
@@ -202,7 +188,7 @@ def update_graphs(start_date, end_date):
             hovermode='closest',
             plot_bgcolor='white',
             paper_bgcolor='white',
-            yaxis=dict(range=[260, 360]),
+            yaxis=dict(range=[285, 315]),
         ),
     }
 
@@ -211,7 +197,7 @@ def update_graphs(start_date, end_date):
         'data': [
             go.Scatter(
                 x=dates,
-                y=moe_scores,
+                y=moe_perf,
                 mode='lines+markers',
                 name='DeepSeek-V3',
                 line=dict(color='#3498db'),
@@ -222,7 +208,7 @@ def update_graphs(start_date, end_date):
             hovermode='closest',
             plot_bgcolor='white',
             paper_bgcolor='white',
-            yaxis=dict(range=[160, 260]),
+            yaxis=dict(range=[180, 220]),
         ),
     }
 
