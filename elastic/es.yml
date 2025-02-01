@@ -1,0 +1,54 @@
+version: '3'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    container_name: es
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      - "ELASTIC_PASSWORD=123456"
+      - xpack.security.enabled=true
+      - bootstrap.memory_lock=true
+      - "network.host=0.0.0.0"
+      - "http.host=0.0.0.0"
+      - http.cors.enabled=true
+      - "http.cors.allow-origin=*"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - esnet1
+    ports:
+      - "8901:9200"
+    volumes:
+      - es_data:/work/elastic/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.0
+    container_name: kibana
+    environment:
+      - "SERVER_PUBLICBASEURL=http://`hostname -i`:5601"
+      - "SERVER_HOST=0.0.0.0"
+      - SERVER_NAME=kibana
+      - "ELASTICSEARCH_HOSTS=http://elasticsearch:9200"
+      - ELASTICSEARCH_USERNAME=elastic
+      - "ELASTICSEARCH_PASSWORD=123456"
+    networks:
+      - esnet1
+    ports:
+      - "8902:5601"
+    depends_on:
+      - elasticsearch
+
+networks:
+  esnet1:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24
+          gateway: 192.168.100.1
+
+volumes:
+  es_data:
+    driver: local
