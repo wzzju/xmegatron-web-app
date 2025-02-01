@@ -155,7 +155,7 @@ def layout():
                                                 hovermode='closest',
                                                 plot_bgcolor='white',
                                                 paper_bgcolor='white',
-                                                yaxis=dict(range=[28, 35]),
+                                                yaxis=dict(range=[25, 35]),
                                             ),
                                         },
                                     ),
@@ -261,7 +261,7 @@ def update_graphs(start_date, end_date):
             hovermode='closest',
             plot_bgcolor='white',
             paper_bgcolor='white',
-            yaxis=dict(range=[28, 35]),
+            yaxis=dict(range=[25, 35]),
         ),
     }
 
