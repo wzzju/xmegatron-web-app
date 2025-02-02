@@ -43,23 +43,23 @@ def search_data(start_date=None, end_date=None, index_name=INDEX_NAME, es=ES_CLI
         "size": 1000,  # 最多返回1000个查询结果
     }
 
-    dates = []
-    dense_acc = []
-    dense_perf = []
-    moe_acc = []
-    moe_perf = []
+    dense_date, dense_acc, dense_perf, dense_commit = [], [], [], []
+    moe_date, moe_acc, moe_perf, moe_commit = [], [], [], []
     try:
         response = es.search(index=index_name, body=query_conditions)
         for hit in response['hits']['hits']:
             doc = hit['_source']
-            dates.append(doc['created_at'])
             if doc['model_type'] == "Dense":
+                dense_date.append(doc['created_at'])
                 dense_acc.append(doc['acc'])
                 dense_perf.append(doc['perf'])
+                dense_commit.append(doc['commit_id'])
             elif doc['model_type'] == "MoE":
+                moe_date.append(doc['created_at'])
                 moe_acc.append(doc['acc'])
                 moe_perf.append(doc['perf'])
+                moe_commit.append(doc['commit_id'])
     except Exception:
         traceback.print_stack()
 
-    return dates, dense_acc, moe_acc, dense_perf, moe_perf
+    return dense_date, moe_date, dense_commit, moe_commit, dense_acc, moe_acc, dense_perf, moe_perf

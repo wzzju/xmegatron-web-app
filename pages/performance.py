@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import dash
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
@@ -15,7 +17,7 @@ dash.register_page(
 
 def layout():
     es = get_or_connect_es()
-    dates, _, _, dense_perf, moe_perf = search_data(es=es)
+    dense_date, moe_date, dense_commit, moe_commit, _, _, dense_perf, moe_perf = search_data(es=es)
 
     banner = dbc.Row(
         [
@@ -48,8 +50,10 @@ def layout():
                                     html.H5("时间范围", className="card-title"),
                                     dcc.DatePickerRange(
                                         id='date-range-perf',
-                                        start_date=dates[-1],
-                                        end_date=dates[0],
+                                        start_date=(datetime.now() - timedelta(days=30)).strftime(
+                                            "%Y-%m-%d %H:%M:%S"
+                                        ),
+                                        end_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                         display_format='YYYY-MM-DD',
                                     ),
                                 ]
@@ -77,11 +81,16 @@ def layout():
                                         figure={
                                             'data': [
                                                 go.Scatter(
-                                                    x=dates,
+                                                    x=dense_date,
                                                     y=dense_perf,
                                                     mode='lines+markers',
                                                     name='Llama3',
                                                     line=dict(color='#2ecc71'),
+                                                    hovertemplate="<b>Value</b>: %{y:.2f}<br>"
+                                                    + "<b>Commit ID</b>: %{text}<br>"
+                                                    + "<b>Date</b>: %{x}<br>"
+                                                    + "<extra></extra>",
+                                                    text=dense_commit,
                                                 )
                                             ],
                                             'layout': go.Layout(
@@ -115,11 +124,16 @@ def layout():
                                         figure={
                                             'data': [
                                                 go.Scatter(
-                                                    x=dates,
+                                                    x=moe_date,
                                                     y=moe_perf,
                                                     mode='lines+markers',
                                                     name='DeepSeek-V3',
                                                     line=dict(color='#3498db'),
+                                                    hovertemplate="<b>Value</b>: %{y:.2f}<br>"
+                                                    + "<b>Commit ID</b>: %{text}<br>"
+                                                    + "<b>Date</b>: %{x}<br>"
+                                                    + "<extra></extra>",
+                                                    text=moe_commit,
                                                 )
                                             ],
                                             'layout': go.Layout(
@@ -164,11 +178,11 @@ def layout():
     [Input('date-range-perf', 'start_date'), Input('date-range-perf', 'end_date')],
 )
 def update_graphs(start_date, end_date):
-    dates, dense_acc, moe_acc = [], [], []
+    dense_date, moe_date, dense_commit, moe_commit, dense_perf, moe_perf = [], [], [], [], [], []
 
     if start_date and end_date:
         es = get_or_connect_es()
-        dates, _, _, dense_perf, moe_perf = search_data(
+        dense_date, moe_date, dense_commit, moe_commit, _, _, dense_perf, moe_perf = search_data(
             start_date=start_date, end_date=end_date, es=es
         )
 
@@ -176,11 +190,16 @@ def update_graphs(start_date, end_date):
     dense_figure = {
         'data': [
             go.Scatter(
-                x=dates,
+                x=dense_date,
                 y=dense_perf,
                 mode='lines+markers',
                 name='Llama3',
                 line=dict(color='#2ecc71'),
+                hovertemplate="<b>Value</b>: %{y:.2f}<br>"
+                + "<b>Commit ID</b>: %{text}<br>"
+                + "<b>Date</b>: %{x}<br>"
+                + "<extra></extra>",
+                text=dense_commit,
             )
         ],
         'layout': go.Layout(
@@ -196,11 +215,16 @@ def update_graphs(start_date, end_date):
     moe_figure = {
         'data': [
             go.Scatter(
-                x=dates,
+                x=moe_date,
                 y=moe_perf,
                 mode='lines+markers',
                 name='DeepSeek-V3',
                 line=dict(color='#3498db'),
+                hovertemplate="<b>Value</b>: %{y:.2f}<br>"
+                + "<b>Commit ID</b>: %{text}<br>"
+                + "<b>Date</b>: %{x}<br>"
+                + "<extra></extra>",
+                text=moe_commit,
             )
         ],
         'layout': go.Layout(
