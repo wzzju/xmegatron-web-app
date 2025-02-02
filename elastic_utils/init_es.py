@@ -1,6 +1,7 @@
 import time
 from datetime import datetime, timedelta
 
+import pytz
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from tabulate import tabulate
@@ -27,8 +28,8 @@ def create_index(es, index_name):
             "properties": {
                 "created_at": {
                     "type": "date",
-                    # 支持三种日期格式：完整时间戳、纯日期、毫秒时间戳
-                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+                    # 支持四种日期格式：git显示时间戳、完整时间戳、纯日期、毫秒时间戳
+                    "format": "EEE MMM d HH:mm:ss yyyy Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
                 },
                 # keyword ：不分词的文本，用于精确匹配
                 "commit_id": {"type": "keyword"},
@@ -66,7 +67,9 @@ def insert_data(es, index_name):
         return f"{alpha_1}{num_1}{alpha_2}{num_2}"
 
     one_doc = {
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "created_at": datetime.now(pytz.timezone('Asia/Shanghai')).strftime(
+            "%a %b %-d %H:%M:%S %Y %z"
+        ),
         "commit_id": generate_commit_id(),
         "commit_message": "优化Dense模型训练性能",
         "model_type": "Dense",
@@ -91,12 +94,12 @@ def insert_data(es, index_name):
             model_type = random.choice(["Dense", "MoE"])
             doc = {
                 "created_at": (
-                    datetime.now()
+                    datetime.now(pytz.timezone('Asia/Shanghai'))
                     - timedelta(
                         days=random.randint(1, 100),
                         hours=random.randint(0, num // (i + 1)) + 2 * i,
                     )
-                ).strftime("%Y-%m-%d %H:%M:%S"),
+                ).strftime("%a %b %-d %H:%M:%S %Y %z"),
                 "commit_id": commit_ids[i],
                 "commit_message": random.choice(messages),
                 "model_type": model_type,
@@ -130,14 +133,14 @@ def search_data(es, index_name):
         print(f"ID: {hit['_id']}, Data: {hit['_source']}")
     print("-" * 120)
 
-    now = datetime.now()
+    now = datetime.now(pytz.timezone('Asia/Shanghai'))
     month_ago = now - timedelta(days=30)
     # query_conditions = {
     #     "query": {
     #         "range": {
     #             "created_at": {
-    #                 "gte": month_ago.strftime("%Y-%m-%d %H:%M:%S"),
-    #                 "lte": now.strftime("%Y-%m-%d %H:%M:%S"),
+    #                 "gte": month_ago.strftime("%a %b %-d %H:%M:%S %Y %z"),
+    #                 "lte": now.strftime("%a %b %-d %H:%M:%S %Y %z"),
     #             }
     #         }
     #     },
@@ -168,8 +171,8 @@ def search_data(es, index_name):
                     {
                         "range": {
                             "created_at": {
-                                "gte": month_ago.strftime("%Y-%m-%d %H:%M:%S"),
-                                "lte": now.strftime("%Y-%m-%d %H:%M:%S"),
+                                "gte": month_ago.strftime("%a %b %-d %H:%M:%S %Y %z"),
+                                "lte": now.strftime("%a %b %-d %H:%M:%S %Y %z"),
                             }
                         }
                     },

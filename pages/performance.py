@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import dash
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
+import pytz
 from dash import dcc, html
 from dash.dependencies import Input, Output
 
@@ -50,10 +51,13 @@ def layout():
                                     html.H5("时间范围", className="card-title"),
                                     dcc.DatePickerRange(
                                         id='date-range-perf',
-                                        start_date=(datetime.now() - timedelta(days=30)).strftime(
-                                            "%Y-%m-%d %H:%M:%S"
-                                        ),
-                                        end_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                        start_date=(
+                                            datetime.now(pytz.timezone('Asia/Shanghai'))
+                                            - timedelta(days=30)
+                                        ).strftime("%a %b %-d %H:%M:%S %Y %z"),
+                                        end_date=datetime.now(
+                                            pytz.timezone('Asia/Shanghai')
+                                        ).strftime("%a %b %-d %H:%M:%S %Y %z"),
                                         display_format='YYYY-MM-DD',
                                     ),
                                 ]

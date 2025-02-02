@@ -14,7 +14,7 @@ curl -u "$ES_USR:$ES_PWD" -X PUT "$ES_ADDR/$INDEX_NAME?pretty" -H 'Content-Type:
     "properties": {
       "created_at": {
         "type": "date",
-        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        "format": "EEE MMM d HH:mm:ss yyyy Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
       },
       "commit_id": {"type": "keyword"},
       "commit_message": {"type": "text", "analyzer": "standard"},
@@ -30,12 +30,12 @@ curl -u "$ES_USR:$ES_PWD" -X PUT "$ES_ADDR/$INDEX_NAME?pretty" -H 'Content-Type:
 # 2. 向quality_monitor索引中插入一条文档（自动生成ID）
 curl -u "$ES_USR:$ES_PWD" -X POST "$ES_ADDR/$INDEX_NAME/_doc?pretty" -H 'Content-Type: application/json' -d'
 {
-  "created_at" : "2025-02-01 12:45:56",
-  "commit_id" : "cefd7a1020fb",
-  "commit_message" : "修复精度问题",
+  "created_at" : "Wed Jan 22 00:03:35 2025 +0800",
+  "commit_id" : "b78c709d6e2c",
+  "commit_message" : "优化调度性能",
   "model_type" : "Dense",
-  "acc" : 2.26,
-  "perf" : 316.56
+  "acc" : 2.15,
+  "perf" : 311.66
 }
 '
 
