@@ -5,7 +5,7 @@ import plotly.graph_objs as go
 import pytz
 from dash import dcc, html
 
-from elastic_utils import DATE_FMT, TIME_ZONE
+from utils import DATE_FMT, TIME_ZONE
 
 
 def create_sidebar(active_item=None):

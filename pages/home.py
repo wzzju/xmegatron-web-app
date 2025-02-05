@@ -2,7 +2,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, State, clientside_callback, dcc, html
 
-from elastic_utils import get_or_connect_es, search_data
+from utils import get_or_connect_es, search_data
 
 from .common import create_scatter_figure, create_sidebar, create_time_card
 
