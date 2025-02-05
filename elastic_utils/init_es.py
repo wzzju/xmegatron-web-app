@@ -26,19 +26,24 @@ def create_index(es, index_name):
     mapping = {
         "mappings": {
             "properties": {
-                "created_at": {
+                "commit_date": {
                     "type": "date",
                     # 支持四种日期格式：git显示时间戳、完整时间戳、纯日期、毫秒时间戳
                     "format": "EEE MMM d HH:mm:ss yyyy Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
                 },
-                # keyword ：不分词的文本，用于精确匹配
-                "commit_id": {"type": "keyword"},
-                # text ：会被分词的文本，用于全文搜索
-                # standard 分词器：按空格分词
-                "commit_message": {"type": "text", "analyzer": "standard"},
-                # 主字段用 keyword 类型
-                # 添加 raw 子字段用于聚合和排序
-                "model_type": {"type": "keyword", "fields": {"raw": {"type": "keyword"}}},
+                # keyword：不分词的文本，用于精确匹配，支持排序和聚合
+                "trigger_repo": {"type": "keyword"},
+                "xmlir_commit": {"type": "keyword"},
+                "llm_commit": {"type": "keyword"},
+                "mextension_commit": {"type": "keyword"},
+                "mcore_commit": {"type": "keyword"},
+                # model_type 使用 text 类型，表示会被分词的文本，用于全文搜索，适合搜索部分匹配关键词的情况，默认不支持排序和聚合
+                # model_type.raw 使用 keyword 类型，表示不分词的文本，用于聚合和排序
+                "model_type": {
+                    "type": "text",
+                    "analyzer": "standard",
+                    "fields": {"raw": {"type": "keyword"}},
+                },
                 "acc": {"type": "float"},
                 "perf": {"type": "float"},
             }
@@ -60,18 +65,19 @@ def insert_data(es, index_name):
     import string
 
     def generate_commit_id():
-        alpha_1 = ''.join(random.choices(string.ascii_lowercase, k=3))
-        num_1 = ''.join(random.choices(string.digits, k=3))
-        alpha_2 = ''.join(random.choices(string.ascii_lowercase, k=3))
-        num_2 = ''.join(random.choices(string.digits, k=3))
+        alpha_1 = ''.join(random.choices(string.ascii_lowercase, k=2))
+        num_1 = ''.join(random.choices(string.digits, k=2))
+        alpha_2 = ''.join(random.choices(string.ascii_lowercase, k=2))
+        num_2 = ''.join(random.choices(string.digits, k=1))
         return f"{alpha_1}{num_1}{alpha_2}{num_2}"
 
     one_doc = {
-        "created_at": datetime.now(pytz.timezone('Asia/Shanghai')).strftime(
-            "%a %b %-d %H:%M:%S %Y %z"
-        ),
-        "commit_id": generate_commit_id(),
-        "commit_message": "优化Dense模型训练性能",
+        "commit_date": "Sat Feb 1 12:26:23 2025 +0800",
+        "trigger_repo": "XMLIR",
+        "xmlir_commit": f"master@{generate_commit_id()}",
+        "llm_commit": f"master@{generate_commit_id()}",
+        "mextension_commit": f"master@{generate_commit_id()}",
+        "mcore_commit": f"core_r0.10.0@{generate_commit_id()}",
         "model_type": "Dense",
         "acc": 2.15,
         "perf": 305.42,
@@ -81,27 +87,29 @@ def insert_data(es, index_name):
 
     def generate_sample_data(num=100):
         data = []
-        commit_ids = [generate_commit_id() for i in range(num)]
-        messages = [
-            "优化MoE训练性能",
-            "更新路由算法",
-            "修复内存泄漏",
-            "添加新调度策略",
-            "改进模型结构",
+        commit_ids = [generate_commit_id() for i in range(4 * num)]
+        repos = [
+            "XMLIR",
+            "KLX-Megatron-Extension",
+            "KLX-LLM",
         ]
 
         for i in range(num):
             model_type = random.choice(["Dense", "MoE"])
+            branches = random.choice(["main", "dev", "dev_0.10.0"])
             doc = {
-                "created_at": (
+                "commit_date": (
                     datetime.now(pytz.timezone('Asia/Shanghai'))
                     - timedelta(
                         days=random.randint(1, 100),
                         hours=random.randint(0, num // (i + 1)) + 2 * i,
                     )
                 ).strftime("%a %b %-d %H:%M:%S %Y %z"),
-                "commit_id": commit_ids[i],
-                "commit_message": random.choice(messages),
+                "trigger_repo": random.choice(repos),
+                "xmlir_commit": f"master@{commit_ids[i * 4]}",
+                "llm_commit": f"master@{commit_ids[i * 4 + 1]}",
+                "mextension_commit": f"{branches}@{commit_ids[i * 4 + 2]}",
+                "mcore_commit": f"core_r0.10.0@{commit_ids[i * 4 + 3]}",
                 "model_type": model_type,
                 "acc": (
                     round(random.uniform(2.2, 2.5), 2)
@@ -135,32 +143,37 @@ def search_data(es, index_name):
 
     now = datetime.now(pytz.timezone('Asia/Shanghai'))
     month_ago = now - timedelta(days=30)
-    # query_conditions = {
-    #     "query": {
-    #         "range": {
-    #             "created_at": {
-    #                 "gte": month_ago.strftime("%a %b %-d %H:%M:%S %Y %z"),
-    #                 "lte": now.strftime("%a %b %-d %H:%M:%S %Y %z"),
-    #             }
-    #         }
-    #     },
-    #     "sort": [{"created_at": {"order": "desc"}}],  # 按时间降序排序
-    #     "size": 100,  # 最多返回100个查询结果
-    # }
-    # try:
-    #     response = es.search(index=index_name, body=query_conditions)
-    #     print(f"Find {response['hits']['total']['value']} records:")
-    #     for hit in response['hits']['hits']:
-    #         doc = hit['_source']
-    #         print(f"创建时间: {doc['created_at']}")
-    #         print(f"Commit ID: {doc['commit_id']}")
-    #         print(f"提交信息: {doc['commit_message']}")
-    #         print(f"模型类型: {doc['model_type']}")
-    #         print(f"Perf: {doc['perf']:.2f}")
-    #         print(f"Acc: {doc['acc']:.2f}")
-    #         print("*" * 120)
-    # except Exception as e:
-    #     print(f"Query Error: {e}")
+    query_conditions = {
+        "query": {
+            "range": {
+                "commit_date": {
+                    "gte": month_ago.strftime("%a %b %-d %H:%M:%S %Y %z"),
+                    "lte": now.strftime("%a %b %-d %H:%M:%S %Y %z"),
+                }
+            }
+        },
+        "sort": [{"commit_date": {"order": "desc"}}],  # 按时间降序排序
+        "size": 100,  # 最多返回100个查询结果
+    }
+    try:
+        response = es.search(index=index_name, body=query_conditions)
+        print(f"Find {response['hits']['total']['value']} records:")
+        for hit in response['hits']['hits']:
+            doc = hit['_source']
+            print(f"Model Type: {doc['model_type']}")
+            print(f"Acc: {doc['acc']:.2f}")
+            print(f"Perf: {doc['perf']:.2f}")
+            print(
+                f"Trigger Repo: {doc['trigger_repo']}\n"
+                + f"MLIR Commit: {doc['xmlir_commit']}\n"
+                + f"LLM Commit: {doc['llm_commit']}\n"
+                + f"MExtension Commit: {doc['mextension_commit']}\n"
+                + f"MCore Commit: {doc['mcore_commit']}"
+            )
+            print(f"Date: {doc['commit_date']}")
+            print("*" * 120)
+    except Exception as e:
+        print(f"Query Error: {e}")
     query_conditions = {
         "query": {
             # 使用 bool 查询组合多个条件
@@ -170,7 +183,7 @@ def search_data(es, index_name):
                     # 条件1：查询最近一个月的数据
                     {
                         "range": {
-                            "created_at": {
+                            "commit_date": {
                                 "gte": month_ago.strftime("%a %b %-d %H:%M:%S %Y %z"),
                                 "lte": now.strftime("%a %b %-d %H:%M:%S %Y %z"),
                             }
@@ -183,7 +196,7 @@ def search_data(es, index_name):
         },
         "sort": [
             {"model_type.raw": {"order": "asc"}},  # 先按模型类型升序
-            {"created_at": {"order": "desc"}},  # 再按时间降序
+            {"commit_date": {"order": "desc"}},  # 再按时间降序
         ],
         "size": 100,  # 返回结果数量限制
         "aggs": {  # 添加聚合分析
@@ -222,16 +235,30 @@ def search_data(es, index_name):
         print(tabulate(stats_data, headers=headers, tablefmt="grid"))
 
         # 打印详细数据
-        print("\n=== 详细数据 ===")
-        headers = ["时间", "Commit ID", "模型类型", "准确率", "性能"]
+        print("\n=== Detail Data ===")
+        headers = [
+            "Date",
+            "Trigger Repo",
+            "XMLIR Commit",
+            "LLM Commit",
+            "MExtension Commit",
+            "MCore Commit",
+            "Mode Type",
+            "Acc",
+            "Perf",
+        ]
         details_data = []
 
         for hit in response['hits']['hits']:
             doc = hit['_source']
             details_data.append(
                 [
-                    doc['created_at'],
-                    doc['commit_id'][:8],  # 只显示commit id的前8位
+                    doc['commit_date'],
+                    doc['trigger_repo'],
+                    doc['xmlir_commit'],
+                    doc['llm_commit'],
+                    doc['mextension_commit'],
+                    doc['mcore_commit'],
                     doc['model_type'],
                     f"{doc['acc']:.2f}",
                     f"{doc['perf']:.2f}",

@@ -18,7 +18,7 @@ dash.register_page(
 
 def layout():
     es = get_or_connect_es()
-    dense_date, moe_date, dense_commit, moe_commit, _, _, dense_perf, moe_perf = search_data(es=es)
+    dense_date, moe_date, dense_meta, moe_meta, _, _, dense_perf, moe_perf = search_data(es=es)
 
     banner = dbc.Row(
         [
@@ -28,7 +28,7 @@ def layout():
                         [
                             html.H2("性能监控", className="text-center text-white mb-4"),
                             html.P(
-                                "监控XMLIR代码仓每个合入commit对XMegatron模型训练性能的影响",
+                                "监控XPytorch及其周边代码仓每个合入commit对XMegatron模型训练性能的影响",
                                 className="text-center text-white",
                             ),
                         ],
@@ -91,10 +91,10 @@ def layout():
                                                     name='Llama3',
                                                     line=dict(color='#2ecc71'),
                                                     hovertemplate="<b>Value</b>: %{y:.2f}<br>"
-                                                    + "<b>Commit ID</b>: %{text}<br>"
+                                                    + "%{text}<br>"
                                                     + "<b>Date</b>: %{x}<br>"
                                                     + "<extra></extra>",
-                                                    text=dense_commit,
+                                                    text=dense_meta,
                                                 )
                                             ],
                                             'layout': go.Layout(
@@ -134,10 +134,10 @@ def layout():
                                                     name='DeepSeek-V3',
                                                     line=dict(color='#3498db'),
                                                     hovertemplate="<b>Value</b>: %{y:.2f}<br>"
-                                                    + "<b>Commit ID</b>: %{text}<br>"
+                                                    + "%{text}<br>"
                                                     + "<b>Date</b>: %{x}<br>"
                                                     + "<extra></extra>",
-                                                    text=moe_commit,
+                                                    text=moe_meta,
                                                 )
                                             ],
                                             'layout': go.Layout(
@@ -182,11 +182,11 @@ def layout():
     [Input('date-range-perf', 'start_date'), Input('date-range-perf', 'end_date')],
 )
 def update_graphs(start_date, end_date):
-    dense_date, moe_date, dense_commit, moe_commit, dense_perf, moe_perf = [], [], [], [], [], []
+    dense_date, moe_date, dense_meta, moe_meta, dense_perf, moe_perf = [], [], [], [], [], []
 
     if start_date and end_date:
         es = get_or_connect_es()
-        dense_date, moe_date, dense_commit, moe_commit, _, _, dense_perf, moe_perf = search_data(
+        dense_date, moe_date, dense_meta, moe_meta, _, _, dense_perf, moe_perf = search_data(
             start_date=start_date, end_date=end_date, es=es
         )
 
@@ -200,10 +200,10 @@ def update_graphs(start_date, end_date):
                 name='Llama3',
                 line=dict(color='#2ecc71'),
                 hovertemplate="<b>Value</b>: %{y:.2f}<br>"
-                + "<b>Commit ID</b>: %{text}<br>"
+                + "%{text}<br>"
                 + "<b>Date</b>: %{x}<br>"
                 + "<extra></extra>",
-                text=dense_commit,
+                text=dense_meta,
             )
         ],
         'layout': go.Layout(
@@ -225,10 +225,10 @@ def update_graphs(start_date, end_date):
                 name='DeepSeek-V3',
                 line=dict(color='#3498db'),
                 hovertemplate="<b>Value</b>: %{y:.2f}<br>"
-                + "<b>Commit ID</b>: %{text}<br>"
+                + "%{text}<br>"
                 + "<b>Date</b>: %{x}<br>"
                 + "<extra></extra>",
-                text=moe_commit,
+                text=moe_meta,
             )
         ],
         'layout': go.Layout(

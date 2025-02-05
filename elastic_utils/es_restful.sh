@@ -12,13 +12,16 @@ curl -u "$ES_USR:$ES_PWD" -X PUT "$ES_ADDR/$INDEX_NAME?pretty" -H 'Content-Type:
 {
   "mappings": {
     "properties": {
-      "created_at": {
+      "commit_date": {
         "type": "date",
         "format": "EEE MMM d HH:mm:ss yyyy Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
       },
-      "commit_id": {"type": "keyword"},
-      "commit_message": {"type": "text", "analyzer": "standard"},
-      "model_type": {"type": "keyword", "fields": {"raw": {"type": "keyword"}}},
+      "trigger_repo": {"type": "keyword"},
+      "xmlir_commit": {"type": "keyword"},
+      "llm_commit": {"type": "keyword"},
+      "mextension_commit": {"type": "keyword"},
+      "mcore_commit": {"type": "keyword"},
+      "model_type": {"type": "text", "analyzer": "standard", "fields": {"raw": {"type": "keyword"}}},
       "acc": {"type": "float"},
       "perf": {"type": "float"}
     }
@@ -30,12 +33,28 @@ curl -u "$ES_USR:$ES_PWD" -X PUT "$ES_ADDR/$INDEX_NAME?pretty" -H 'Content-Type:
 # 2. 向quality_monitor索引中插入一条文档（自动生成ID）
 curl -u "$ES_USR:$ES_PWD" -X POST "$ES_ADDR/$INDEX_NAME/_doc?pretty" -H 'Content-Type: application/json' -d'
 {
-  "created_at" : "Wed Jan 22 00:03:35 2025 +0800",
-  "commit_id" : "b78c709d6e2c",
-  "commit_message" : "优化调度性能",
+  "commit_date" : "Wed Jan 22 00:03:35 2025 +0800",
+  "trigger_repo" : "XMLIR",
+  "xmlir_commit" : "master@2bcd0b1",
+  "llm_commit" : "master@cd7b6d4",
+  "mextension_commit" : "master@I0375f8",
+  "mcore_commit" : "core_r0.10.0@fa79b7c",
   "model_type" : "Dense",
   "acc" : 2.15,
   "perf" : 311.66
+}
+'
+curl -u "$ES_USR:$ES_PWD" -X POST "$ES_ADDR/$INDEX_NAME/_doc?pretty" -H 'Content-Type: application/json' -d'
+{
+  "commit_date" : "Thu Jan 23 14:22:24 2025 +0800",
+  "trigger_repo" : "KLX-Megatron-Extension",
+  "xmlir_commit" : "master@2bcd0b1",
+  "llm_commit" : "master@cd7b6d4",
+  "mextension_commit" : "dev@c817156",
+  "mcore_commit" : "core_r0.10.0@fa79b7c",
+  "model_type" : "MoE",
+  "acc" : 7.25,
+  "perf" : 209.98
 }
 '
 
@@ -55,13 +74,13 @@ curl -u "$ES_USR:$ES_PWD" -X GET "$ES_ADDR/$INDEX_NAME/_search?pretty" -H "Conte
 {
 	"query": {
     "range": {
-      "created_at": {
+      "commit_date": {
         "gte": "2025-01-26",
         "lte": "2025-02-01"
       }
     }
   },
-  "sort": [{"created_at": {"order": "desc"}}],
+  "sort": [{"commit_date": {"order": "desc"}}],
   "size": 100
 }
 '

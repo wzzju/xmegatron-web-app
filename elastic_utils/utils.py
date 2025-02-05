@@ -26,11 +26,23 @@ def get_or_connect_es(addr=ES_ADDR, usr=ES_USR, pwd=ES_PWD):
 
 
 def _get_date_obj(date_str):
-    try:
-        date = datetime.strptime(date_str, "%a %b %d %H:%M:%S %Y %z")
-        return True, date
-    except ValueError:
-        return False, None
+    formats = ["%a %b %d %H:%M:%S %Y %z", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"]
+    for fmt in formats:
+        try:
+            date = datetime.strptime(date_str, fmt)
+            return True, date
+        except ValueError:
+            continue
+    return False, None
+
+
+def _format_commit(commit):
+    data = commit.split("@")
+    assert len(data) == 2, f"bad commit: {commit}"
+    branch, cid = data[0], data[1]
+    if len(cid) > 7:
+        cid = cid[:7]
+    return f"{branch}@{cid}"
 
 
 def search_data(start_date=None, end_date=None, index_name=INDEX_NAME, es=ES_CLIENT):
@@ -44,44 +56,53 @@ def search_data(start_date=None, end_date=None, index_name=INDEX_NAME, es=ES_CLI
     query_conditions = {
         "query": {
             "range": {
-                "created_at": {
+                "commit_date": {
                     "gte": start_date,
                     "lte": end_date,
                 }
             }
         },
-        "sort": [{"created_at": {"order": "asc"}}],  # 按时间升序排序
+        "sort": [{"commit_date": {"order": "asc"}}],  # 按时间升序排序
         "size": 1000,  # 最多返回1000个查询结果
     }
 
-    dense_date, dense_acc, dense_perf, dense_commit = [], [], [], []
-    moe_date, moe_acc, moe_perf, moe_commit = [], [], [], []
+    dense_date, dense_acc, dense_perf, dense_meta = [], [], [], []
+    moe_date, moe_acc, moe_perf, moe_meta = [], [], [], []
     try:
         response = es.search(index=index_name, body=query_conditions)
         for hit in response['hits']['hits']:
             doc = hit['_source']
             model_type = doc['model_type']
-            date = doc['created_at']
+            date = doc['commit_date']
             success, date_obj = _get_date_obj(date)
             if success:
                 date = date_obj
             acc = doc['acc']
             perf = doc['perf']
-            commit_id = doc['commit_id']
-            if len(commit_id) > 8:
-                commit_id = commit_id[:8]
+            trigger_repo = doc['trigger_repo']
+            xmlir_commit = _format_commit(doc['xmlir_commit'])
+            llm_commit = _format_commit(doc['llm_commit'])
+            mextension_commit = _format_commit(doc['mextension_commit'])
+            mcore_commit = _format_commit(doc['mcore_commit'])
+            meta_info = (
+                f"<b>Trigger Repo</b>: {trigger_repo}<br>"
+                + f"<b>XMLIR Commit</b>: {xmlir_commit}<br>"
+                + f"<b>LLM Commit</b>: {llm_commit}<br>"
+                + f"<b>MExtension Commit</b>: {mextension_commit}<br>"
+                + f"<b>MCore Commit</b>: {mcore_commit}"
+            )
 
             if model_type == "Dense":
                 dense_date.append(date)
                 dense_acc.append(acc)
                 dense_perf.append(perf)
-                dense_commit.append(commit_id)
+                dense_meta.append(meta_info)
             elif model_type == "MoE":
                 moe_date.append(date)
                 moe_acc.append(acc)
                 moe_perf.append(perf)
-                moe_commit.append(commit_id)
+                moe_meta.append(meta_info)
     except Exception:
         traceback.print_stack()
 
-    return dense_date, moe_date, dense_commit, moe_commit, dense_acc, moe_acc, dense_perf, moe_perf
+    return dense_date, moe_date, dense_meta, moe_meta, dense_acc, moe_acc, dense_perf, moe_perf
