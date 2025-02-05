@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 import pytz
 from elasticsearch import Elasticsearch
 
+DATE_FMT = "%a %b %-d %H:%M:%S %Y %z"
+TIME_ZONE = "Asia/Shanghai"
 INDEX_NAME = "quality_monitor"
 ES_ADDR = ["http://172.219.129.21:8901"]
 ES_USR = "usr"
@@ -47,10 +49,10 @@ def _format_commit(commit):
 
 def search_data(start_date=None, end_date=None, index_name=INDEX_NAME, es=ES_CLIENT):
     if end_date is None:
-        end_date = datetime.now(pytz.timezone('Asia/Shanghai')).strftime("%a %b %-d %H:%M:%S %Y %z")
+        end_date = datetime.now(pytz.timezone(TIME_ZONE)).strftime(DATE_FMT)
     if start_date is None:
-        start_date = (datetime.now(pytz.timezone('Asia/Shanghai')) - timedelta(days=30)).strftime(
-            "%a %b %-d %H:%M:%S %Y %z"
+        start_date = (datetime.now(pytz.timezone(TIME_ZONE)) - timedelta(days=30)).strftime(
+            DATE_FMT
         )
 
     query_conditions = {

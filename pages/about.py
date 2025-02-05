@@ -4,7 +4,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
-from .home import get_sidebar
+from .common import create_sidebar
 
 dash.register_page(__name__, path='/about', title='About', name='About')
 
@@ -35,7 +35,7 @@ def layout():
     )
 
     layout = [
-        get_sidebar(__name__),
+        create_sidebar(__name__),
         html.Div(
             [
                 dbc.Container(banner, fluid=True),

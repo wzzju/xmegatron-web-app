@@ -6,6 +6,8 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from tabulate import tabulate
 
+DATE_FMT = "%a %b %-d %H:%M:%S %Y %z"
+TIME_ZONE = "Asia/Shanghai"
 INDEX_NAME = "quality_monitor"
 ES_ADDR = ["http://172.219.129.21:8901"]
 ES_USR = "usr"
@@ -99,12 +101,12 @@ def insert_data(es, index_name):
             branches = random.choice(["main", "dev", "dev_0.10.0"])
             doc = {
                 "commit_date": (
-                    datetime.now(pytz.timezone('Asia/Shanghai'))
+                    datetime.now(pytz.timezone(TIME_ZONE))
                     - timedelta(
                         days=random.randint(1, 100),
                         hours=random.randint(0, num // (i + 1)) + 2 * i,
                     )
-                ).strftime("%a %b %-d %H:%M:%S %Y %z"),
+                ).strftime(DATE_FMT),
                 "trigger_repo": random.choice(repos),
                 "xmlir_commit": f"master@{commit_ids[i * 4]}",
                 "llm_commit": f"master@{commit_ids[i * 4 + 1]}",
@@ -141,14 +143,14 @@ def search_data(es, index_name):
         print(f"ID: {hit['_id']}, Data: {hit['_source']}")
     print("-" * 120)
 
-    now = datetime.now(pytz.timezone('Asia/Shanghai'))
+    now = datetime.now(pytz.timezone(TIME_ZONE))
     month_ago = now - timedelta(days=30)
     query_conditions = {
         "query": {
             "range": {
                 "commit_date": {
-                    "gte": month_ago.strftime("%a %b %-d %H:%M:%S %Y %z"),
-                    "lte": now.strftime("%a %b %-d %H:%M:%S %Y %z"),
+                    "gte": month_ago.strftime(DATE_FMT),
+                    "lte": now.strftime(DATE_FMT),
                 }
             }
         },
@@ -184,8 +186,8 @@ def search_data(es, index_name):
                     {
                         "range": {
                             "commit_date": {
-                                "gte": month_ago.strftime("%a %b %-d %H:%M:%S %Y %z"),
-                                "lte": now.strftime("%a %b %-d %H:%M:%S %Y %z"),
+                                "gte": month_ago.strftime(DATE_FMT),
+                                "lte": now.strftime(DATE_FMT),
                             }
                         }
                     },
