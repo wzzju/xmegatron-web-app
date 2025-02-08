@@ -58,13 +58,13 @@ def search_data(start_date=None, end_date=None, index_name=INDEX_NAME, es=ES_CLI
     query_conditions = {
         "query": {
             "range": {
-                "commit_date": {
+                "created_at": {
                     "gte": start_date,
                     "lte": end_date,
                 }
             }
         },
-        "sort": [{"commit_date": {"order": "asc"}}],  # 按时间升序排序
+        "sort": [{"created_at": {"order": "asc"}}],  # 按时间升序排序
         "size": 1000,  # 最多返回1000个查询结果
     }
 
@@ -75,7 +75,7 @@ def search_data(start_date=None, end_date=None, index_name=INDEX_NAME, es=ES_CLI
         for hit in response['hits']['hits']:
             doc = hit['_source']
             model_type = doc['model_type']
-            date = doc['commit_date']
+            date = doc['created_at']
             success, date_obj = _get_date_obj(date)
             if success:
                 date = date_obj

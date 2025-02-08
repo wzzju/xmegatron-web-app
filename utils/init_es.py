@@ -28,7 +28,7 @@ def create_index(es, index_name):
     mapping = {
         "mappings": {
             "properties": {
-                "commit_date": {
+                "created_at": {
                     "type": "date",
                     # 支持四种日期格式：git显示时间戳、完整时间戳、纯日期、毫秒时间戳
                     "format": "EEE MMM d HH:mm:ss yyyy Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
@@ -74,7 +74,7 @@ def insert_data(es, index_name):
         return f"{alpha_1}{num_1}{alpha_2}{num_2}"
 
     one_doc = {
-        "commit_date": "Sat Feb 1 12:26:23 2025 +0800",
+        "created_at": "Sat Feb 1 12:26:23 2025 +0800",
         "trigger_repo": "XMLIR",
         "xmlir_commit": f"master@{generate_commit_id()}",
         "llm_commit": f"master@{generate_commit_id()}",
@@ -100,7 +100,7 @@ def insert_data(es, index_name):
             model_type = random.choice(["Dense", "MoE"])
             branches = random.choice(["main", "dev", "dev_0.10.0"])
             doc = {
-                "commit_date": (
+                "created_at": (
                     datetime.now(pytz.timezone(TIME_ZONE))
                     - timedelta(
                         days=random.randint(1, 100),
@@ -148,13 +148,13 @@ def search_data(es, index_name):
     query_conditions = {
         "query": {
             "range": {
-                "commit_date": {
+                "created_at": {
                     "gte": month_ago.strftime(DATE_FMT),
                     "lte": now.strftime(DATE_FMT),
                 }
             }
         },
-        "sort": [{"commit_date": {"order": "desc"}}],  # 按时间降序排序
+        "sort": [{"created_at": {"order": "desc"}}],  # 按时间降序排序
         "size": 100,  # 最多返回100个查询结果
     }
     try:
@@ -172,7 +172,7 @@ def search_data(es, index_name):
                 + f"MExtension Commit: {doc['mextension_commit']}\n"
                 + f"MCore Commit: {doc['mcore_commit']}"
             )
-            print(f"Date: {doc['commit_date']}")
+            print(f"Date: {doc['created_at']}")
             print("*" * 120)
     except Exception as e:
         print(f"Query Error: {e}")
@@ -185,7 +185,7 @@ def search_data(es, index_name):
                     # 条件1：查询最近一个月的数据
                     {
                         "range": {
-                            "commit_date": {
+                            "created_at": {
                                 "gte": month_ago.strftime(DATE_FMT),
                                 "lte": now.strftime(DATE_FMT),
                             }
@@ -198,7 +198,7 @@ def search_data(es, index_name):
         },
         "sort": [
             {"model_type.raw": {"order": "asc"}},  # 先按模型类型升序
-            {"commit_date": {"order": "desc"}},  # 再按时间降序
+            {"created_at": {"order": "desc"}},  # 再按时间降序
         ],
         "size": 100,  # 返回结果数量限制
         "aggs": {  # 添加聚合分析
@@ -255,7 +255,7 @@ def search_data(es, index_name):
             doc = hit['_source']
             details_data.append(
                 [
-                    doc['commit_date'],
+                    doc['created_at'],
                     doc['trigger_repo'],
                     doc['xmlir_commit'],
                     doc['llm_commit'],

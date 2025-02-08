@@ -12,7 +12,7 @@ curl -u "$ES_USR:$ES_PWD" -X PUT "$ES_ADDR/$INDEX_NAME?pretty" -H 'Content-Type:
 {
   "mappings": {
     "properties": {
-      "commit_date": {
+      "created_at": {
         "type": "date",
         "format": "EEE MMM d HH:mm:ss yyyy Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
       },
@@ -33,7 +33,7 @@ curl -u "$ES_USR:$ES_PWD" -X PUT "$ES_ADDR/$INDEX_NAME?pretty" -H 'Content-Type:
 # 2. 向quality_monitor索引中插入一条文档（自动生成ID）
 curl -u "$ES_USR:$ES_PWD" -X POST "$ES_ADDR/$INDEX_NAME/_doc?pretty" -H 'Content-Type: application/json' -d'
 {
-  "commit_date" : "Wed Jan 22 00:03:35 2025 +0800",
+  "created_at" : "Wed Jan 22 00:03:35 2025 +0800",
   "trigger_repo" : "XMLIR",
   "xmlir_commit" : "master@2bcd0b1",
   "llm_commit" : "master@cd7b6d4",
@@ -46,7 +46,7 @@ curl -u "$ES_USR:$ES_PWD" -X POST "$ES_ADDR/$INDEX_NAME/_doc?pretty" -H 'Content
 '
 curl -u "$ES_USR:$ES_PWD" -X POST "$ES_ADDR/$INDEX_NAME/_doc?pretty" -H 'Content-Type: application/json' -d'
 {
-  "commit_date" : "Thu Jan 23 14:22:24 2025 +0800",
+  "created_at" : "Thu Jan 23 14:22:24 2025 +0800",
   "trigger_repo" : "KLX-Megatron-Extension",
   "xmlir_commit" : "master@2bcd0b1",
   "llm_commit" : "master@cd7b6d4",
@@ -74,13 +74,13 @@ curl -u "$ES_USR:$ES_PWD" -X GET "$ES_ADDR/$INDEX_NAME/_search?pretty" -H "Conte
 {
 	"query": {
     "range": {
-      "commit_date": {
+      "created_at": {
         "gte": "2025-01-26",
         "lte": "2025-02-01"
       }
     }
   },
-  "sort": [{"commit_date": {"order": "desc"}}],
+  "sort": [{"created_at": {"order": "desc"}}],
   "size": 100
 }
 '
